@@ -40,6 +40,10 @@ export declare class Encoder {
   writeInt16(value: i16): void;
   writeInt32(value: i32): void;
   writeInt64(value: i64): void;
+  writeUInt8(value: u8): void;
+  writeUInt16(value: u16): void;
+  writeUInt32(value: u32): void;
+  writeUInt64(value: u64): void;
   writeFloat32(value: f32): void;
   writeFloat64(value: f64): void;
   writeString(value: string): void;
@@ -63,6 +67,10 @@ export declare class Sizer {
   writeInt16(value: i16): void;
   writeInt32(value: i32): void;
   writeInt64(value: i64): void;
+  writeUInt8(value: u8): void;
+  writeUInt16(value: u16): void;
+  writeUInt32(value: u32): void;
+  writeUInt64(value: u64): void;
   writeFloat32(value: f32): void;
   writeFloat64(value: f64): void;
 }

@@ -419,6 +419,33 @@ export class Encoder {
     }
   }
 
+  writeUInt8(value: u8): void {
+    this.writeUInt64(<u64>value);
+  }
+  writeUInt16(value: u16): void {
+    this.writeUInt64(<u64>value);
+  }
+  writeUInt32(value: u32): void {
+    this.writeUInt64(<u64>value);
+  }
+  writeUInt64(value: u64): void {
+    if (value < 1 << 7) {
+      this.reader.setUint8(<u8>value);
+    } else if (value <= <u64>i8.MAX_VALUE) {
+      this.reader.setUint8(<u8>Format.INT8);
+      this.reader.setUint8(<u8>value);
+    } else if (value <= <u64>i16.MAX_VALUE) {
+      this.reader.setUint8(<u8>Format.INT16);
+      this.reader.setUint16(<u16>value);
+    } else if (value <= <u64>i32.MAX_VALUE) {
+      this.reader.setUint8(<u8>Format.INT32);
+      this.reader.setUint32(<u32>value);
+    } else {
+      this.reader.setUint8(<u8>Format.INT64);
+      this.reader.setUint64(value);
+    }
+  }
+
   writeFloat32(value: f32): void {
     this.reader.setUint8(<u8>Format.FLOAT32);
     this.reader.setFloat32(value);
@@ -559,6 +586,29 @@ export class Sizer {
     } else if (value < 1 << 15 && value >= -(1 << 15)) {
       this.length += 3;
     } else if (value < 1 << 31 && value >= -(1 << 31)) {
+      this.length += 5;
+    } else {
+      this.length += 9;
+    }
+  }
+
+  writeUInt8(value: u8): void {
+    this.writeUInt64(<u64>value);
+  }
+  writeUInt16(value: u16): void {
+    this.writeUInt64(<u64>value);
+  }
+  writeUInt32(value: u32): void {
+    this.writeUInt64(<u64>value);
+  }
+  writeUInt64(value: u64): void {
+    if (value < 1 << 7) {
+      this.length++;
+    } else if (value < 1 << 8) {
+      this.length += 2;
+    } else if (value < 1 << 16) {
+      this.length += 3;
+    } else if (value < 1 << 32) {
       this.length += 5;
     } else {
       this.length += 9;
