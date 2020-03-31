@@ -462,9 +462,10 @@ export class Encoder {
     this.reader.setBytes(buf);
   }
 
-  writeBin(ab: ArrayBuffer): void {
+  writeByteArray(ab: ArrayBuffer): void {
     if (ab.byteLength == 0) {
       this.writeNil();
+      return
     }
     this.writeStringBinLength(ab.byteLength);
     this.reader.setBytes(ab);
@@ -551,12 +552,13 @@ export class Sizer {
     }
   }
 
-  writeBin(length: u32): void {
-    if (length == 0) {
-      length = 1; //nil byte
+  writeByteArray(ab: ArrayBuffer): void {
+    if (ab.byteLength == 0) {
+      this.length++; //nil byte
+      return
     }
-    this.writeStringBinLength(length);
-    this.length += length;
+    this.writeStringBinLength(ab.byteLength);
+    this.length += ab.byteLength;
   }
 
   writeMapSize(length: u32): void {
