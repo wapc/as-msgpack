@@ -47,8 +47,9 @@ export declare class Encoder {
   writeFloat32(value: f32): void;
   writeFloat64(value: f64): void;
   writeString(value: string): void;
+  writeStringLength(length: u32): void;
   writeByteArray(ab: ArrayBuffer): void;
-  writeStringBinLength(length: u32): void;
+  writeBinLength(length: u32): void;
   writeArraySize(length: u32): void;
   writeMapSize(length: u32): void;
 }
@@ -58,10 +59,11 @@ export declare class Sizer {
   constructor();
   writeNil(): void;
   writeString(value: string): void;
-  writeStringBinLength(length: u32): void;
+  writeStringLength(length: u32): void;
   writeBool(value: bool): void;
   writeArraySize(length: u32): void;
   writeByteArray(ab: ArrayBuffer): void;
+  writeBinLength(length: u32): void;
   writeMapSize(length: u32): void;
   writeInt8(value: i8): void;
   writeInt16(value: i16): void;

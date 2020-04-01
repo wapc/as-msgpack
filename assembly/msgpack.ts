@@ -171,6 +171,9 @@ export class Decoder {
       return 0;
     }
     const leadByte = this.reader.getUint8();
+    if (this.isFixedArray(leadByte)) {
+      return <u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
+    }
     switch (leadByte) {
       case Format.BIN8:
         return <u32>this.reader.getUint8();
@@ -456,22 +459,7 @@ export class Encoder {
     this.reader.setFloat64(value);
   }
 
-  writeString(value: string): void {
-    const buf = String.UTF8.encode(value);
-    this.writeStringBinLength(buf.byteLength);
-    this.reader.setBytes(buf);
-  }
-
-  writeByteArray(ab: ArrayBuffer): void {
-    if (ab.byteLength == 0) {
-      this.writeNil();
-      return
-    }
-    this.writeStringBinLength(ab.byteLength);
-    this.reader.setBytes(ab);
-  }
-
-  writeStringBinLength(length: u32): void {
+  writeStringLength(length: u32): void {
     if (length < 32) {
       this.reader.setUint8((<u8>length) | (<u8>Format.FIXSTR));
     } else if (length <= <u32>u8.MAX_VALUE) {
@@ -484,6 +472,34 @@ export class Encoder {
       this.reader.setUint8(<u8>Format.STR32);
       this.reader.setUint32(length);
     }
+  }
+
+  writeString(value: string): void {
+    const buf = String.UTF8.encode(value);
+    this.writeStringLength(buf.byteLength);
+    this.reader.setBytes(buf);
+  }
+
+  writeBinLength(length: u32): void {
+    if (length <= <u32>u8.MAX_VALUE) {
+      this.reader.setUint8(<u8>Format.BIN8);
+      this.reader.setUint8(<u8>length);
+    } else if (length <= <u32>u16.MAX_VALUE) {
+      this.reader.setUint8(<u8>Format.BIN16);
+      this.reader.setUint16(<u16>length);
+    } else {
+      this.reader.setUint8(<u8>Format.BIN32);
+      this.reader.setUint32(length);
+    }
+  }
+
+  writeByteArray(ab: ArrayBuffer): void {
+    if (ab.byteLength == 0) {
+      this.writeNil();
+      return
+    }
+    this.writeBinLength(ab.byteLength);
+    this.reader.setBytes(ab);
   }
 
   writeArraySize(length: u32): void {
@@ -522,11 +538,11 @@ export class Sizer {
 
   writeString(value: string): void {
     const buf = String.UTF8.encode(value);
-    this.writeStringBinLength(buf.byteLength);
+    this.writeStringLength(buf.byteLength);
     this.length += buf.byteLength;
   }
 
-  writeStringBinLength(length: u32): void {
+  writeStringLength(length: u32): void {
     if (length < 32) {
       this.length++;
     } else if (length <= <u32>u8.MAX_VALUE) {
@@ -552,13 +568,23 @@ export class Sizer {
     }
   }
 
+  writeBinLength(length: u32): void {
+    if (length <= <u32>u8.MAX_VALUE) {
+      this.length += 2;
+    } else if (length <= <u32>u16.MAX_VALUE) {
+      this.length += 3;
+    } else {
+      this.length += 5;
+    }
+  }
+
   writeByteArray(ab: ArrayBuffer): void {
     if (ab.byteLength == 0) {
       this.length++; //nil byte
       return
     }
-    this.writeStringBinLength(ab.byteLength);
-    this.length += ab.byteLength;
+    this.writeBinLength(ab.byteLength);
+    this.length += ab.byteLength + 1;
   }
 
   writeMapSize(length: u32): void {
