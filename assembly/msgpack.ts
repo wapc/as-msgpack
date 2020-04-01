@@ -154,6 +154,9 @@ export class Decoder {
     if (this.isFixedString(leadByte)) {
       return leadByte & 0x1f;
     }
+    if (this.isFixedArray(leadByte)) {
+      return <u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
+    }
     switch (leadByte) {
       case Format.STR8:
         return <u32>this.reader.getUint8();
@@ -262,116 +265,116 @@ export class Decoder {
   getSize(): i32 {
     const leadByte = this.reader.getUint8(); // will discard one
     let objectsToDiscard = <i32>0;
-    switch (leadByte) {
-      case Format.NIL:
-        break;
-      case Format.TRUE:
-        break;
-      case Format.FALSE:
-        break;
-      case Format.BIN8:
-        this.reader.discard(<i32>this.reader.getUint8());
-        break;
-      case Format.BIN16:
-        this.reader.discard(<i32>this.reader.getUint16());
-        break;
-      case Format.BIN32:
-        this.reader.discard(<i32>this.reader.getUint32());
-        break;
-      case Format.FLOAT32:
-        this.reader.discard(4);
-        break;
-      case Format.FLOAT64:
-        this.reader.discard(8);
-        break;
-      case Format.UINT8:
-        this.reader.discard(1);
-        break;
-      case Format.UINT16:
-        this.reader.discard(2);
-        break;
-      case Format.UINT32:
-        this.reader.discard(4);
-        break;
-      case Format.UINT64:
-        this.reader.discard(8);
-        break;
-      case Format.INT8:
-        this.reader.discard(1);
-        break;
-      case Format.INT16:
-        this.reader.discard(2);
-        break;
-      case Format.INT32:
-        this.reader.discard(4);
-        break;
-      case Format.INT64:
-        this.reader.discard(8);
-        break;
-      case Format.FIXEXT1:
-        this.reader.discard(2);
-        break;
-      case Format.FIXEXT2:
-        this.reader.discard(3);
-        break;
-      case Format.FIXEXT4:
-        this.reader.discard(5);
-        break;
-      case Format.FIXEXT8:
-        this.reader.discard(9);
-        break;
-      case Format.FIXEXT16:
-        this.reader.discard(17);
-        break;
-      case Format.STR8:
-        this.reader.discard(this.reader.getUint8());
-        break;
-      case Format.STR16:
-        this.reader.discard(this.reader.getUint16());
-        break;
-      case Format.STR32:
-        // TODO overflow, need to modify discard and underlying array buffer
-        this.reader.discard(this.reader.getUint32());
-        break;
-      case Format.ARRAY16:
-        //TODO OVERFLOW
-        objectsToDiscard = <i32>this.reader.getUint16();
-        break;
-      case Format.ARRAY32:
-        //TODO OVERFLOW
-        objectsToDiscard = <i32>this.reader.getUint32();
-        break;
-      case Format.MAP16:
-        //TODO OVERFLOW
-        objectsToDiscard = 2 * <i32>this.reader.getUint16();
-        break;
-      case Format.MAP32:
-        //TODO OVERFLOW
-        objectsToDiscard = 2 * <i32>this.reader.getUint32();
-        break;
-      default:
-        // Handled for fixed values
-        if (this.isNegativeFixedInt(leadByte)) {
-          // noop, will just discard the leadbyte
-        } else if (this.isFixedInt(leadByte)) {
-          // noop, will just discard the leadbyte
-        } else if (this.isFixedString(leadByte)) {
-          let strLength = leadByte & 0x1f;
-          this.reader.discard(strLength);
-        } else if (this.isFixedArray(leadByte)) {
-          // TODO handle overflow
-          objectsToDiscard = <i32>(
-            (leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE)
-          );
-        } else if (this.isFixedMap(leadByte)) {
-          // TODO handle overflow
-          objectsToDiscard =
-            2 * <i32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
-        } else {
-          throw new TypeError(
-            "invalid prefix, bad encoding for val: " + leadByte.toString()
-          );
-        }
+    // Handled for fixed values
+    if (this.isNegativeFixedInt(leadByte)) {
+      // noop, will just discard the leadbyte
+    } else if (this.isFixedInt(leadByte)) {
+      // noop, will just discard the leadbyte
+    } else if (this.isFixedString(leadByte)) {
+      let strLength = leadByte & 0x1f;
+      this.reader.discard(strLength);
+    } else if (this.isFixedArray(leadByte)) {
+      // TODO handle overflow
+      objectsToDiscard = <i32>(
+        (leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE)
+      );
+    } else if (this.isFixedMap(leadByte)) {
+      // TODO handle overflow
+      objectsToDiscard =
+        2 * <i32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
+    } else {
+      switch (leadByte) {
+        case Format.NIL:
+          break;
+        case Format.TRUE:
+          break;
+        case Format.FALSE:
+          break;
+        case Format.BIN8:
+          this.reader.discard(<i32>this.reader.getUint8());
+          break;
+        case Format.BIN16:
+          this.reader.discard(<i32>this.reader.getUint16());
+          break;
+        case Format.BIN32:
+          this.reader.discard(<i32>this.reader.getUint32());
+          break;
+        case Format.FLOAT32:
+          this.reader.discard(4);
+          break;
+        case Format.FLOAT64:
+          this.reader.discard(8);
+          break;
+        case Format.UINT8:
+          this.reader.discard(1);
+          break;
+        case Format.UINT16:
+          this.reader.discard(2);
+          break;
+        case Format.UINT32:
+          this.reader.discard(4);
+          break;
+        case Format.UINT64:
+          this.reader.discard(8);
+          break;
+        case Format.INT8:
+          this.reader.discard(1);
+          break;
+        case Format.INT16:
+          this.reader.discard(2);
+          break;
+        case Format.INT32:
+          this.reader.discard(4);
+          break;
+        case Format.INT64:
+          this.reader.discard(8);
+          break;
+        case Format.FIXEXT1:
+          this.reader.discard(2);
+          break;
+        case Format.FIXEXT2:
+          this.reader.discard(3);
+          break;
+        case Format.FIXEXT4:
+          this.reader.discard(5);
+          break;
+        case Format.FIXEXT8:
+          this.reader.discard(9);
+          break;
+        case Format.FIXEXT16:
+          this.reader.discard(17);
+          break;
+        case Format.STR8:
+          this.reader.discard(this.reader.getUint8());
+          break;
+        case Format.STR16:
+          this.reader.discard(this.reader.getUint16());
+          break;
+        case Format.STR32:
+          // TODO overflow, need to modify discard and underlying array buffer
+          this.reader.discard(this.reader.getUint32());
+          break;
+        case Format.ARRAY16:
+          //TODO OVERFLOW
+          objectsToDiscard = <i32>this.reader.getUint16();
+          break;
+        case Format.ARRAY32:
+          //TODO OVERFLOW
+          objectsToDiscard = <i32>this.reader.getUint32();
+          break;
+        case Format.MAP16:
+          //TODO OVERFLOW
+          objectsToDiscard = 2 * <i32>this.reader.getUint16();
+          break;
+        case Format.MAP32:
+          //TODO OVERFLOW
+          objectsToDiscard = 2 * <i32>this.reader.getUint32();
+          break;
+        default:
+            throw new TypeError(
+              "invalid prefix, bad encoding for val: " + leadByte.toString()
+            );
+      }
     }
 
     return objectsToDiscard;
@@ -434,17 +437,17 @@ export class Encoder {
   writeUInt64(value: u64): void {
     if (value < 1 << 7) {
       this.reader.setUint8(<u8>value);
-    } else if (value <= <u64>i8.MAX_VALUE) {
-      this.reader.setUint8(<u8>Format.INT8);
+    } else if (value <= <u64>u8.MAX_VALUE) {
+      this.reader.setUint8(<u8>Format.UINT8);
       this.reader.setUint8(<u8>value);
-    } else if (value <= <u64>i16.MAX_VALUE) {
-      this.reader.setUint8(<u8>Format.INT16);
+    } else if (value <= <u64>u16.MAX_VALUE) {
+      this.reader.setUint8(<u8>Format.UINT16);
       this.reader.setUint16(<u16>value);
-    } else if (value <= <u64>i32.MAX_VALUE) {
-      this.reader.setUint8(<u8>Format.INT32);
+    } else if (value <= <u64>u32.MAX_VALUE) {
+      this.reader.setUint8(<u8>Format.UINT32);
       this.reader.setUint32(<u32>value);
     } else {
-      this.reader.setUint8(<u8>Format.INT64);
+      this.reader.setUint8(<u8>Format.UINT64);
       this.reader.setUint64(value);
     }
   }
