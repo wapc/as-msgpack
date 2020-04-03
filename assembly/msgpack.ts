@@ -275,9 +275,7 @@ export class Decoder {
       this.reader.discard(strLength);
     } else if (this.isFixedArray(leadByte)) {
       // TODO handle overflow
-      objectsToDiscard = <i32>(
-        (leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE)
-      );
+      objectsToDiscard = <i32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
     } else if (this.isFixedMap(leadByte)) {
       // TODO handle overflow
       objectsToDiscard =
@@ -371,13 +369,64 @@ export class Decoder {
           objectsToDiscard = 2 * <i32>this.reader.getUint32();
           break;
         default:
-            throw new TypeError(
-              "invalid prefix, bad encoding for val: " + leadByte.toString()
-            );
+          throw new TypeError(
+            "invalid prefix, bad encoding for val: " + leadByte.toString()
+          );
       }
     }
 
     return objectsToDiscard;
+  }
+
+  readArray<T>(fn: (decoder: Decoder) => T): Array<T> {
+    const size = this.readArraySize();
+    let a = new Array<T>();
+    for (let i: u32 = 0; i < size; i++) {
+      const item = fn(this);
+      a.push(item);
+    }
+    return a;
+  }
+
+  readNullableArray<T>(fn: (decoder: Decoder) => T): Array<T> | null {
+    if (this.isNextNil()) {
+      return null;
+    }
+    return this.readArray(fn);
+  }
+
+  readMap<K, V>(
+    keyFn: (decoder: Decoder) => K,
+    valueFn: (decoder: Decoder) => V
+  ): Map<K, V> {
+    const size = this.readMapSize();
+    let m = new Map<K, V>();
+    for (let i: u32 = 0; i < size; i++) {
+      const key = keyFn(this);
+      const value = valueFn(this);
+      m.set(key, value);
+    }
+    return m;
+  }
+
+  readNullableMap<K, V>(
+    keyFn: (decoder: Decoder) => K,
+    valueFn: (decoder: Decoder) => V
+  ): Map<K, V> | null {
+    if (this.isNextNil()) {
+      return null;
+    }
+    return this.readMap(keyFn, valueFn);
+  }
+}
+
+export class MapEntry<K, V> {
+  key: K;
+  value: V;
+
+  constructor(key: K, value: V) {
+    this.key = key;
+    this.value = value;
   }
 }
 
@@ -499,7 +548,7 @@ export class Encoder {
   writeByteArray(ab: ArrayBuffer): void {
     if (ab.byteLength == 0) {
       this.writeNil();
-      return
+      return;
     }
     this.writeBinLength(ab.byteLength);
     this.reader.setBytes(ab);
@@ -527,6 +576,51 @@ export class Encoder {
       this.reader.setUint8(<u8>Format.MAP32);
       this.reader.setUint32(length);
     }
+  }
+
+  writeArray<T>(a: Array<T>, fn: (encoder: Encoder, item: T) => void): void {
+    this.writeArraySize(a.length);
+    for (let i: i32 = 0; i < a.length; i++) {
+      fn(this, a[i]);
+    }
+  }
+
+  writeNullableArray<T>(
+    a: Array<T> | null,
+    fn: (encoder: Encoder, item: T) => void
+  ): void {
+    if (a === null) {
+      this.writeNil();
+      return;
+    }
+    this.writeArray(a, fn);
+  }
+
+  writeMap<K, V>(
+    m: Map<K, V>,
+    keyFn: (encoder: Encoder, key: K) => void,
+    valueFn: (encoder: Encoder, value: V) => void
+  ): void {
+    this.writeMapSize(m.size);
+    const keys = m.keys();
+    for (let i: i32 = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const value = m.get(key);
+      keyFn(this, key);
+      valueFn(this, value);
+    }
+  }
+
+  writeNullableMap<K, V>(
+    m: Map<K, V> | null,
+    keyFn: (encoder: Encoder, key: K) => void,
+    valueFn: (encoder: Encoder, value: V) => void
+  ): void {
+    if (m === null) {
+      this.writeNil();
+      return;
+    }
+    this.writeMap(m, keyFn, valueFn);
   }
 }
 
@@ -584,7 +678,7 @@ export class Sizer {
   writeByteArray(ab: ArrayBuffer): void {
     if (ab.byteLength == 0) {
       this.length++; //nil byte
-      return
+      return;
     }
     this.writeBinLength(ab.byteLength);
     this.length += ab.byteLength + 1;
@@ -652,6 +746,51 @@ export class Sizer {
   writeFloat64(value: f64): void {
     this.length += 9;
   }
+
+  writeArray<T>(a: Array<T>, fn: (sizer: Sizer, item: T) => void): void {
+    this.writeArraySize(a.length);
+    for (let i: i32 = 0; i < a.length; i++) {
+      fn(this, a[i]);
+    }
+  }
+
+  writeNullableArray<T>(
+    a: Array<T> | null,
+    fn: (sizer: Sizer, item: T) => void
+  ): void {
+    if (a === null) {
+      this.writeNil();
+      return;
+    }
+    this.writeArray(a, fn);
+  }
+
+  writeMap<K, V>(
+    m: Map<K, V>,
+    keyFn: (sizer: Sizer, key: K) => void,
+    valueFn: (sizer: Sizer, value: V) => void
+  ): void {
+    this.writeMapSize(m.size);
+    const keys = m.keys();
+    for (let i: i32 = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const value = m.get(key);
+      keyFn(this, key);
+      valueFn(this, value);
+    }
+  }
+
+  writeNullableMap<K, V>(
+    m: Map<K, V> | null,
+    keyFn: (sizer: Sizer, key: K) => void,
+    valueFn: (sizer: Sizer, value: V) => void
+  ): void {
+    if (m === null) {
+      this.writeNil();
+      return;
+    }
+    this.writeMap(m, keyFn, valueFn);
+  }
 }
 
 const enum Format {
@@ -694,5 +833,5 @@ const enum Format {
   ARRAY32 = 0xdd,
   MAP16 = 0xde,
   MAP32 = 0xdf,
-  NEGATIVE_FIXINT = 0xe0
+  NEGATIVE_FIXINT = 0xe0,
 }

@@ -29,6 +29,16 @@ export declare class Decoder {
   isNil(u: u8): bool;
   skip(): void;
   getSize(): i32;
+  readArray<T>(fn: (decoder: Decoder) => T): Array<T>;
+  readNullableArray<T>(fn: (decoder: Decoder) => T): Array<T> | null;
+  readMap<K, V>(
+    keyFn: (decoder: Decoder) => K,
+    valueFn: (decoder: Decoder) => V
+  ): Map<K, V>;
+  readNullableMap<K, V>(
+    keyFn: (decoder: Decoder) => K,
+    valueFn: (decoder: Decoder) => V
+  ): Map<K, V> | null;
 }
 
 export declare class Encoder {
@@ -52,6 +62,21 @@ export declare class Encoder {
   writeBinLength(length: u32): void;
   writeArraySize(length: u32): void;
   writeMapSize(length: u32): void;
+  writeArray<T>(a: Array<T>, fn: (encoder: Encoder, item: T) => void): void;
+  writeNullableArray<T>(
+    a: Array<T> | null,
+    fn: (encoder: Encoder, item: T) => void
+  ): void;
+  writeMap<K, V>(
+    m: Map<K, V>,
+    keyFn: (encoder: Encoder, key: K) => void,
+    valueFn: (encoder: Encoder, value: V) => void
+  ): void;
+  writeNullableMap<K, V>(
+    m: Map<K, V> | null,
+    keyFn: (encoder: Encoder, key: K) => void,
+    valueFn: (encoder: Encoder, value: V) => void
+  ): void;
 }
 
 export declare class Sizer {
@@ -75,4 +100,19 @@ export declare class Sizer {
   writeUInt64(value: u64): void;
   writeFloat32(value: f32): void;
   writeFloat64(value: f64): void;
+  writeArray<T>(a: Array<T>, fn: (sizer: Sizer, item: T) => void): void;
+  writeNullableArray<T>(
+    a: Array<T> | null,
+    fn: (sizer: Sizer, item: T) => void
+  ): void;
+  writeMap<K, V>(
+    m: Map<K, V>,
+    keyFn: (sizer: Sizer, key: K) => void,
+    valueFn: (sizer: Sizer, value: V) => void
+  ): void;
+  writeNullableMap<K, V>(
+    m: Map<K, V> | null,
+    keyFn: (sizer: Sizer, key: K) => void,
+    valueFn: (sizer: Sizer, value: V) => void
+  ): void;
 }
