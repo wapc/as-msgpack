@@ -1,6 +1,12 @@
 {
-    "extends": "../node_modules/assemblyscript/std/assembly.json",
-    "include": [
-      "./**/*.ts"
-    ]
-  }
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "declaration": true,
+  },
+  "extends": "../node_modules/assemblyscript/std/assembly.json",
+  "include": [
+    "./**/*.ts",
+    "src/**/*"
+  ]
+}

@@ -58,7 +58,7 @@ export class DataReader {
   getFloat32(): f32 {
     if (this.byteOffset + 4 > this.byteLength)
       throw new RangeError(E_INDEXOUTOFRANGE);
-    const result = load<f32>(this.dataStart + this.byteOffset);
+    const result = reinterpret<f32>(bswap(load<u32>(this.dataStart + this.byteOffset)));
     this.byteOffset += 4;
     return result;
   }
@@ -66,7 +66,7 @@ export class DataReader {
   getFloat64(): f64 {
     if (this.byteOffset + 8 > this.byteLength)
       throw new RangeError(E_INDEXOUTOFRANGE);
-    const result = load<f64>(this.dataStart + this.byteOffset);
+    const result = reinterpret<f64>(bswap(load<u64>(this.dataStart + this.byteOffset)));
     this.byteOffset += 8;
     return result;
   }
@@ -122,14 +122,14 @@ export class DataReader {
   setFloat32(value: f32): void {
     if (this.byteOffset + 4 > this.byteLength)
       throw new RangeError(E_INDEXOUTOFRANGE);
-    store<u32>(this.dataStart + this.byteOffset, <u32>reinterpret<u32>(value));
+    store<u32>(this.dataStart + this.byteOffset, bswap(reinterpret<u32>(value)));
     this.byteOffset += 4;
   }
 
   setFloat64(value: f64): void {
     if (this.byteOffset + 8 > this.byteLength)
       throw new RangeError(E_INDEXOUTOFRANGE);
-    store<u64>(this.dataStart + this.byteOffset, <u64>reinterpret<u64>(value));
+    store<u64>(this.dataStart + this.byteOffset, bswap(reinterpret<u64>(value)));
     this.byteOffset += 8;
   }
 
