@@ -28,7 +28,7 @@ export class Decoder {
 
   readInt8(): i8 {
     const value = this.readInt64();
-    if (value <= <i64>i8.MAX_VALUE || value >= <i64>i8.MIN_VALUE) {
+    if (value <= <i64>i8.MAX_VALUE && value >= <i64>i8.MIN_VALUE) {
       return <i8>value;
     }
     throw new Error(
@@ -37,7 +37,7 @@ export class Decoder {
   }
   readInt16(): i16 {
     const value = this.readInt64();
-    if (value <= <i64>i16.MAX_VALUE || value >= <i64>i16.MIN_VALUE) {
+    if (value <= <i64>i16.MAX_VALUE && value >= <i64>i16.MIN_VALUE) {
       return <i16>value;
     }
     throw new Error(
@@ -46,7 +46,7 @@ export class Decoder {
   }
   readInt32(): i32 {
     const value = this.readInt64();
-    if (value <= <i64>i32.MAX_VALUE || value >= <i64>i32.MIN_VALUE) {
+    if (value <= <i64>i32.MAX_VALUE && value >= <i64>i32.MIN_VALUE) {
       return <i32>value;
     }
     throw new Error(
@@ -76,7 +76,7 @@ export class Decoder {
 
   readUInt8(): u8 {
     const value = this.readUInt64();
-    if (value <= <u64>u8.MAX_VALUE || value >= <u64>u8.MIN_VALUE) {
+    if (value <= <u64>u8.MAX_VALUE) {
       return <u8>value;
     }
     throw new Error(
@@ -86,7 +86,7 @@ export class Decoder {
 
   readUInt16(): u16 {
     const value = this.readUInt64();
-    if (value <= <u64>u16.MAX_VALUE || value >= <u64>u16.MIN_VALUE) {
+    if (value <= <u64>u16.MAX_VALUE) {
       return <u16>value;
     }
     throw new Error(
@@ -96,7 +96,7 @@ export class Decoder {
 
   readUInt32(): u32 {
     const value = this.readUInt64();
-    if (value <= <u64>u32.MAX_VALUE || value >= <u64>u32.MIN_VALUE) {
+    if (value <= <u64>u32.MAX_VALUE) {
       return <u32>value;
     }
     throw new Error(
@@ -123,7 +123,7 @@ export class Decoder {
       case Format.UINT64:
         return this.reader.getUint64();
       default:
-        throw new Error("bad prefix for unsigned int");
+        throw new Error("bad prefix for uint64");
     }
   }
 
@@ -132,7 +132,7 @@ export class Decoder {
     if (this.isFloat32(prefix)) {
       return <f32>this.reader.getFloat32();
     }
-    throw new Error("bad prefix");
+    throw new Error("bad prefix for float32");
   }
 
   readFloat64(): f64 {
@@ -140,7 +140,7 @@ export class Decoder {
     if (this.isFloat64(prefix)) {
       return <f64>this.reader.getFloat64();
     }
-    throw new Error("bad prefix");
+    throw new Error("bad prefix for fload64");
   }
 
   readString(): string {
@@ -257,7 +257,7 @@ export class Decoder {
     let numberOfObjectsToDiscard = this.getSize();
 
     while (numberOfObjectsToDiscard > 0) {
-      this.getSize(); // discard next object
+      this.skip(); // discard next object
       numberOfObjectsToDiscard--;
     }
   }
