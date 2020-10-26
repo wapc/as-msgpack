@@ -37,7 +37,7 @@ class CodecTest {
     this.map.set("baz", [12412, -98987]);
   }
 
-  read(reader: Decoder): void {
+  decode(reader: Decoder): void {
     var numFields = reader.readMapSize();
 
     while (numFields > 0) {
@@ -91,13 +91,32 @@ class CodecTest {
           }
         );
       } else {
-        throw new Error("Sanity.decode: Unknown field name '" + field + "'");
+        reader.skip();
       }
     }
   }
 
-  write(writer: Writer): void {
-    writer.writeMapSize(15);
+  encode(writer: Writer): void {
+    writer.writeMapSize(16);
+
+    // Add some nested data that must be skipped.
+    // This tests skipping over unknown fields.
+    writer.writeString("nested");
+    writer.writeMapSize(2);
+    writer.writeString("foo");
+    writer.writeString("bar");
+    writer.writeString("nested");
+    writer.writeMapSize(3);
+    writer.writeString("foo");
+    writer.writeString("bar");
+    writer.writeString("other");
+    writer.writeString("value");
+    writer.writeString("array");
+    writer.writeArraySize(3);
+    writer.writeInt64(1);
+    writer.writeInt64(2);
+    writer.writeInt64(3);
+
     writer.writeString("nil");
     writer.writeNil();
     writer.writeString("int8");
@@ -144,16 +163,16 @@ class CodecTest {
 
   toBuffer(): ArrayBuffer {
     const sizer = new Sizer();
-    this.write(sizer);
+    this.encode(sizer);
     const buffer = new ArrayBuffer(sizer.length);
     const encoder = new Encoder(buffer);
-    this.write(encoder);
+    this.encode(encoder);
     return buffer;
   }
 
   fromBuffer(buffer: ArrayBuffer): void {
     const decoder = new Decoder(buffer);
-    this.read(decoder);
+    this.decode(decoder);
   }
 }
 
