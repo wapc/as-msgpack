@@ -43,11 +43,11 @@ export class Sizer implements Writer {
 
   writeBinLength(length: u32): void {
     if (length <= <u32>u8.MAX_VALUE) {
-      this.length += 2;
+      this.length += 1;
     } else if (length <= <u32>u16.MAX_VALUE) {
-      this.length += 3;
+      this.length += 2;
     } else {
-      this.length += 5;
+      this.length += 4;
     }
   }
 
