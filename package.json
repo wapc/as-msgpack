@@ -1,6 +1,6 @@
 {
   "name": "as-msgpack",
-  "version": "0.1.1",
+  "version": "0.1.7",
   "types": "assembly/index.ts",
   "description": "MessagePack package for AssemblyScript",
   "repository": {
