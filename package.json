@@ -1,11 +1,11 @@
 {
-  "name": "as-msgpack",
+  "name": "@wapc/as-msgpack",
   "version": "0.1.7",
   "types": "assembly/index.ts",
   "description": "MessagePack package for AssemblyScript",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wapc/as-msgpack.git"
+    "url": "git+https://github.com/wapc/as-msgpack.git"
   },
   "scripts": {
     "test": "asp --verbose",
@@ -16,5 +16,10 @@
   "devDependencies": {
     "@as-pect/cli": "4.0.0",
     "assemblyscript": "^0.16.1"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/wapc/as-msgpack/issues"
+  },
+  "homepage": "https://github.com/wapc/as-msgpack#readme",
+  "dependencies": {}
 }
