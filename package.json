@@ -1,6 +1,6 @@
 {
   "name": "@wapc/as-msgpack",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "types": "assembly/index.ts",
   "description": "MessagePack package for AssemblyScript",
   "repository": {
