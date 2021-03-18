@@ -73,6 +73,21 @@ export class Decoder {
         return <i64>this.reader.getInt32();
       case Format.INT64:
         return this.reader.getInt64();
+      case Format.UINT8:
+        return <i64>this.reader.getUint8();
+      case Format.UINT16:
+        return <i64>this.reader.getUint16();
+      case Format.UINT32:
+        return <i64>this.reader.getUint32();
+      case Format.UINT64: {
+        const value = this.reader.getUint64();
+        if (value <= <u64>i64.MAX_VALUE) {
+          return <i64>value;
+        }
+        throw new Error(
+          "interger overflow: value = " + value.toString() + "; type = i64"
+        );
+      }
       default:
         throw new Error("bad prefix for int");
     }
@@ -126,8 +141,41 @@ export class Decoder {
         return <u64>this.reader.getUint32();
       case Format.UINT64:
         return this.reader.getUint64();
+      case Format.INT8: {
+        const value = this.reader.getInt8();
+        if (value >= 0) {
+          return <u64>value;
+        }
+        throw new Error(
+          "interger underflow: value = " + value.toString() + "; type = u64"
+        );
+      }
+      case Format.INT16:
+        const value = this.reader.getInt16();
+        if (value >= 0) {
+          return <u64>value;
+        }
+        throw new Error(
+          "interger underflow: value = " + value.toString() + "; type = u64"
+        );
+      case Format.INT32:
+        const value = this.reader.getInt32();
+        if (value >= 0) {
+          return <u64>value;
+        }
+        throw new Error(
+          "interger underflow: value = " + value.toString() + "; type = u64"
+        );
+      case Format.INT64:
+        const value = this.reader.getInt64();
+        if (value >= 0) {
+          return <u64>value;
+        }
+        throw new Error(
+          "interger underflow: value = " + value.toString() + "; type = u64"
+        );
       default:
-        throw new Error("bad prefix for uint64");
+        throw new Error("bad prefix for int");
     }
   }
 
@@ -135,16 +183,33 @@ export class Decoder {
     const prefix = this.reader.getUint8();
     if (this.isFloat32(prefix)) {
       return <f32>this.reader.getFloat32();
+    } else if (this.isFloat64(prefix)) {
+      const value = this.reader.getFloat64();
+      const diff = <f64>f32.MAX_VALUE - value;
+
+      if (abs(diff) <= <f64>f32.EPSILON) {
+        return f32.MAX_VALUE;
+      } else if (diff < 0) {
+        throw new Error(
+          "float overflow: value = " + value.toString() + "; type = f32"
+        );
+      } else {
+        return <f32>value;
+      }
+    } else {
+      throw new Error("bad prefix for float");
     }
-    throw new Error("bad prefix for float32");
   }
 
   readFloat64(): f64 {
     const prefix = this.reader.getUint8();
     if (this.isFloat64(prefix)) {
       return <f64>this.reader.getFloat64();
+    } else if (this.isFloat32(prefix)) {
+      return <f64>this.reader.getFloat32();
+    } else {
+      throw new Error("bad prefix for float");
     }
-    throw new Error("bad prefix for fload64");
   }
 
   readString(): string {
