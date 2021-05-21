@@ -1,8 +1,135 @@
 import { DataReader } from "./datareader";
 import { Format } from "./format";
+import { Result } from "./result";
 import { E_INVALIDLENGTH } from "util/error";
 
 export class Decoder {
+  private readonly decoder: SafeDecoder;
+
+  constructor(ua: ArrayBuffer) {
+    this.decoder = new SafeDecoder(ua);
+  }
+
+  isNextNil(): bool {
+    return this.decoder.isNextNil();
+  }
+
+  readBool(): bool {
+    return this.decoder.readBool().unwrap();
+  }
+
+  readInt8(): i8 {
+    return this.decoder.readInt8().unwrap();
+  }
+
+  readInt16(): i16 {
+    return this.decoder.readInt16().unwrap();
+  }
+
+  readInt32(): i32 {
+    return this.decoder.readInt32().unwrap();
+  }
+
+  readInt64(): i64 {
+    return this.decoder.readInt64().unwrap();
+  }
+
+  readUInt8(): u8 {
+    return this.decoder.readUInt8().unwrap();
+  }
+
+  readUInt16(): u16 {
+    return this.decoder.readUInt16().unwrap();
+  }
+
+  readUInt32(): u32 {
+    return this.decoder.readUInt32().unwrap();
+  }
+
+  readUInt64(): u64 {
+    return this.decoder.readUInt64().unwrap();
+  }
+
+  readFloat32(): f32 {
+    return this.decoder.readFloat32().unwrap();
+  }
+
+  readFloat64(): f64 {
+    return this.decoder.readFloat64().unwrap();
+  }
+
+  readString(): string {
+    return this.decoder.readString().unwrap();
+  }
+
+  readStringLength(): u32 {
+    return this.decoder.readStringLength().unwrap();
+  }
+
+  readBinLength(): u32 {
+    return this.decoder.readBinLength().unwrap();
+  }
+
+  readByteArray(): ArrayBuffer {
+    return this.decoder.readByteArray().unwrap();
+  }
+
+  readArraySize(): u32 {
+    return this.decoder.readArraySize().unwrap();
+  }
+
+  readMapSize(): u32 {
+    return this.decoder.readMapSize().unwrap();
+  }
+
+  readArray<T>(fn: (decoder: Decoder) => T): Array<T> {
+    const size = this.readArraySize();
+    let a = new Array<T>();
+    for (let i: u32 = 0; i < size; i++) {
+      const item = fn(this);
+      a.push(item);
+    }
+    return a;
+  }
+
+  readNullableArray<T>(fn: (decoder: Decoder) => T): Array<T> | null {
+    if (this.isNextNil()) {
+      return null;
+    }
+    return this.readArray(fn);
+  }
+
+  readMap<K, V>(keyFn: (decoder: Decoder) => K, valueFn: (decoder: Decoder) => V): Map<K, V> {
+    const size = this.readMapSize();
+    let m = new Map<K, V>();
+    for (let i: u32 = 0; i < size; i++) {
+      const key = keyFn(this);
+      const value = valueFn(this);
+      m.set(key, value);
+    }
+    return m;
+  }
+
+  readNullableMap<K, V>(keyFn: (decoder: Decoder) => K, valueFn: (decoder: Decoder) => V): Map<K, V> | null {
+    if (this.isNextNil()) {
+      return null;
+    }
+    return this.readMap(keyFn, valueFn);
+  }
+
+  isFloat32(u: u8): bool { return this.decoder.isFloat32(u); }
+  isFloat64(u: u8): bool { return this.decoder.isFloat64(u); }
+  isFixedInt(u: u8): bool { return this.decoder.isFixedInt(u); }
+  isNegativeFixedInt(u: u8): bool { return this.decoder.isNegativeFixedInt(u); }
+  isFixedMap(u: u8): bool { return this.decoder.isFixedMap(u); }
+  isFixedArray(u: u8): bool { return this.decoder.isFixedArray(u); }
+  isFixedString(u: u8): bool { return this.decoder.isFixedString(u); }
+  isNil(u: u8): bool { return this.decoder.isNil(u); }
+  getSize(): u32 { return this.decoder.getSize(); }
+  skip(): void { this.decoder.skip(); }
+}
+
+export class SafeDecoder {
   private reader: DataReader;
 
   constructor(ua: ArrayBuffer) {
@@ -17,276 +144,319 @@ export class Decoder {
     return false;
   }
 
-  readBool(): bool {
+  readBool(): Result<bool> {
     const value = this.reader.getUint8();
     if (value == Format.TRUE) {
-      return true;
+      return Result.ok<bool>(true);
     } else if (value == Format.FALSE) {
-      return false;
+      return Result.ok<bool>(false);
     }
-    throw new Error("bad value for bool");
+    return Result.err<bool>(new Error("bad value for bool"));
   }
 
-  readInt8(): i8 {
-    const value = this.readInt64();
+  readInt8(): Result<i8> {
+    const result = this.readInt64()
+    if (result.isErr) {
+      return Result.err<i8>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <i64>i8.MAX_VALUE && value >= <i64>i8.MIN_VALUE) {
-      return <i8>value;
+      return Result.ok<i8>(<i8>value);
     }
-    throw new Error(
+    return Result.err<i8>(new Error(
       "interger overflow: value = " + value.toString() + "; bits = 8"
-    );
-  }
-  readInt16(): i16 {
-    const value = this.readInt64();
-    if (value <= <i64>i16.MAX_VALUE && value >= <i64>i16.MIN_VALUE) {
-      return <i16>value;
-    }
-    throw new Error(
-      "interger overflow: value = " + value.toString() + "; bits = 16"
-    );
-  }
-  readInt32(): i32 {
-    const value = this.readInt64();
-    if (value <= <i64>i32.MAX_VALUE && value >= <i64>i32.MIN_VALUE) {
-      return <i32>value;
-    }
-    throw new Error(
-      "interger overflow: value = " + value.toString() + "; bits = 32"
-    );
+    ));
   }
 
-  readInt64(): i64 {
+  readInt16(): Result<i16> {
+    const result = this.readInt64()
+    if (result.isErr) {
+      return Result.err<i16>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
+    if (value <= <i64>i16.MAX_VALUE && value >= <i64>i16.MIN_VALUE) {
+      return Result.ok<i16>(<i16>value);
+    }
+    return Result.err<i16>(new Error(
+      "interger overflow: value = " + value.toString() + "; bits = 16"
+    ));
+  }
+
+  readInt32(): Result<i32> {
+    const result = this.readInt64()
+    if (result.isErr) {
+      return Result.err<i32>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
+    if (value <= <i64>i32.MAX_VALUE && value >= <i64>i32.MIN_VALUE) {
+      return Result.ok<i32>(<i32>value);
+    }
+    return Result.err<i32>(new Error(
+      "interger overflow: value = " + value.toString() + "; bits = 32"
+    ));
+  }
+
+  readInt64(): Result<i64> {
     const prefix = this.reader.getUint8();
 
     if (this.isFixedInt(prefix)) {
-      return <i64>prefix;
+      return Result.ok<i64>(<i64>prefix);
     }
     if (this.isNegativeFixedInt(prefix)) {
-      return <i64>(<i8>prefix);
+      return Result.ok<i64>(<i64>(<i8>prefix));
     }
     switch (prefix) {
       case Format.INT8:
-        return <i64>this.reader.getInt8();
+        return Result.ok<i64>(<i64>this.reader.getInt8());
       case Format.INT16:
-        return <i64>this.reader.getInt16();
+        return Result.ok<i64>(<i64>this.reader.getInt16());
       case Format.INT32:
-        return <i64>this.reader.getInt32();
+        return Result.ok<i64>(<i64>this.reader.getInt32());
       case Format.INT64:
-        return this.reader.getInt64();
+        return Result.ok<i64>(this.reader.getInt64());
       case Format.UINT8:
-        return <i64>this.reader.getUint8();
+        return Result.ok<i64>(<i64>this.reader.getUint8());
       case Format.UINT16:
-        return <i64>this.reader.getUint16();
+        return Result.ok<i64>(<i64>this.reader.getUint16());
       case Format.UINT32:
-        return <i64>this.reader.getUint32();
+        return Result.ok<i64>(<i64>this.reader.getUint32());
       case Format.UINT64: {
         const value = this.reader.getUint64();
         if (value <= <u64>i64.MAX_VALUE) {
-          return <i64>value;
+          return Result.ok<i64>(<i64>value);
         }
-        throw new Error(
+
+        return Result.err<i64>(new Error(
           "interger overflow: value = " + value.toString() + "; type = i64"
-        );
+        ));
       }
       default:
-        throw new Error("bad prefix for int");
+        return Result.err<i64>(new Error("bad prefix for int"));
     }
   }
 
-  readUInt8(): u8 {
-    const value = this.readUInt64();
+  readUInt8(): Result<u8> {
+    const result = this.readUInt64()
+    if (result.isErr) {
+      return Result.err<u8>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <u64>u8.MAX_VALUE) {
-      return <u8>value;
+      return Result.ok<u8>(<u8>value);
     }
-    throw new Error(
+    return Result.err<u8>(new Error(
       "unsigned interger overflow: value = " + value.toString() + "; bits = 8"
-    );
+    ));
   }
 
-  readUInt16(): u16 {
-    const value = this.readUInt64();
+  readUInt16(): Result<u16> {
+    const result = this.readUInt64()
+    if (result.isErr) {
+      return Result.err<u16>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <u64>u16.MAX_VALUE) {
-      return <u16>value;
+      return Result.ok<u16>(<u16>value);
     }
-    throw new Error(
+    return Result.err<u16>(new Error(
       "unsigned interger overflow: value = " + value.toString() + "; bits = 16"
-    );
+    ));
   }
 
-  readUInt32(): u32 {
-    const value = this.readUInt64();
-    if (value <= <u64>u32.MAX_VALUE) {
-      return <u32>value;
+  readUInt32(): Result<u32> {
+    const result = this.readUInt64()
+    if (result.isErr) {
+      return Result.err<u32>(result.unwrapErr());
     }
-    throw new Error(
+    const value = result.unwrap();
+
+    if (value <= <u64>u32.MAX_VALUE) {
+      return Result.ok<u32>(<u32>value);
+    }
+    return Result.err<u32>(new Error(
       "unsigned interger overflow: value = " + value.toString() + "; bits = 32"
-    );
+    ));
   }
 
-  readUInt64(): u64 {
+  readUInt64(): Result<u64> {
     const prefix = this.reader.getUint8();
 
     if (this.isFixedInt(prefix)) {
-      return <u64>prefix;
+      return Result.ok<u64>(<u64>prefix);
     } else if (this.isNegativeFixedInt(prefix)) {
-      throw new Error("bad prefix");
+      return Result.err<u64>(new Error("bad prefix"));
     }
 
     switch (prefix) {
       case Format.UINT8:
-        return <u64>this.reader.getUint8();
+        return Result.ok<u64>(<u64>this.reader.getUint8());
       case Format.UINT16:
-        return <u64>this.reader.getUint16();
+        return Result.ok<u64>(<u64>this.reader.getUint16());
       case Format.UINT32:
-        return <u64>this.reader.getUint32();
+        return Result.ok<u64>(<u64>this.reader.getUint32());
       case Format.UINT64:
-        return this.reader.getUint64();
+        return Result.ok<u64>(this.reader.getUint64());
       case Format.INT8: {
         const value = this.reader.getInt8();
         if (value >= 0) {
-          return <u64>value;
+          return Result.ok<u64>(<u64>value);
         }
-        throw new Error(
+        return Result.err<u64>(new Error(
           "interger underflow: value = " + value.toString() + "; type = u64"
-        );
+        ));
       }
       case Format.INT16:
         const value = this.reader.getInt16();
         if (value >= 0) {
-          return <u64>value;
+          return Result.ok<u64>(<u64>value);
         }
-        throw new Error(
+        return Result.err<u64>(new Error(
           "interger underflow: value = " + value.toString() + "; type = u64"
-        );
+        ));
       case Format.INT32:
         const value = this.reader.getInt32();
         if (value >= 0) {
-          return <u64>value;
+          return Result.ok<u64>(<u64>value);
         }
-        throw new Error(
+        return Result.err<u64>(new Error(
           "interger underflow: value = " + value.toString() + "; type = u64"
-        );
+        ));
       case Format.INT64:
         const value = this.reader.getInt64();
         if (value >= 0) {
-          return <u64>value;
+          return Result.ok<u64>(<u64>value);
         }
-        throw new Error(
+        return Result.err<u64>(new Error(
           "interger underflow: value = " + value.toString() + "; type = u64"
-        );
+        ));
       default:
-        throw new Error("bad prefix for int");
+        return Result.err<u64>(new Error("bad prefix for int"));
     }
   }
 
-  readFloat32(): f32 {
+  readFloat32(): Result<f32> {
     const prefix = this.reader.getUint8();
     if (this.isFloat32(prefix)) {
-      return <f32>this.reader.getFloat32();
+      return Result.ok<f32>(<f32>this.reader.getFloat32());
     } else if (this.isFloat64(prefix)) {
       const value = this.reader.getFloat64();
       const diff = <f64>f32.MAX_VALUE - value;
 
       if (abs(diff) <= <f64>f32.EPSILON) {
-        return f32.MAX_VALUE;
+        return Result.ok<f32>(f32.MAX_VALUE);
       } else if (diff < 0) {
-        throw new Error(
+        return Result.err<f32>(new Error(
           "float overflow: value = " + value.toString() + "; type = f32"
-        );
+        ));
       } else {
-        return <f32>value;
+        return Result.ok<f32>(<f32>value);
       }
     } else {
-      throw new Error("bad prefix for float");
+      return Result.err<f32>(new Error("bad prefix for float"));
     }
   }
 
-  readFloat64(): f64 {
+  readFloat64(): Result<f64> {
     const prefix = this.reader.getUint8();
     if (this.isFloat64(prefix)) {
-      return <f64>this.reader.getFloat64();
+      return Result.ok<f64>(<f64>this.reader.getFloat64());
     } else if (this.isFloat32(prefix)) {
-      return <f64>this.reader.getFloat32();
+      return Result.ok<f64>(<f64>this.reader.getFloat32());
     } else {
-      throw new Error("bad prefix for float");
+      return Result.err<f64>(new Error("bad prefix for float"));
     }
   }
 
-  readString(): string {
-    const strLen = this.readStringLength();
+  readString(): Result<string> {
+    const result = this.readStringLength();
+    if (result.isErr) {
+      return Result.err<string>(result.unwrapErr());
+    }
+
+    const strLen = result.unwrap();
     const stringBytes = this.reader.getBytes(strLen);
-    return String.UTF8.decode(stringBytes);
+    return Result.ok<string>(String.UTF8.decode(stringBytes));
   }
 
-  readStringLength(): u32 {
+  readStringLength(): Result<u32> {
     const leadByte = this.reader.getUint8();
     if (this.isFixedString(leadByte)) {
-      return leadByte & 0x1f;
+      return Result.ok<u32>(leadByte & 0x1f);
     }
     if (this.isFixedArray(leadByte)) {
-      return <u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
+      return Result.ok<u32>(<u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE));
     }
     switch (leadByte) {
       case Format.STR8:
-        return <u32>this.reader.getUint8();
+        return Result.ok<u32>(<u32>this.reader.getUint8());
       case Format.STR16:
-        return <u32>this.reader.getUint16();
+        return Result.ok<u32>(<u32>this.reader.getUint16());
       case Format.STR32:
-        return this.reader.getUint32();
+        return Result.ok<u32>(this.reader.getUint32());
     }
 
-    throw new RangeError(E_INVALIDLENGTH + leadByte.toString());
+    return Result.err<u32>(new RangeError(E_INVALIDLENGTH + leadByte.toString()));
   }
 
-  readBinLength(): u32 {
+  readBinLength(): Result<u32> {
     if (this.isNextNil()) {
-      return 0;
+      return Result.ok<u32>(0);
     }
     const leadByte = this.reader.getUint8();
     if (this.isFixedArray(leadByte)) {
-      return <u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
+      return Result.ok<u32>(<u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE));
     }
     switch (leadByte) {
       case Format.BIN8:
-        return <u32>this.reader.getUint8();
+        return Result.ok<u32>(<u32>this.reader.getUint8());
       case Format.BIN16:
-        return <u32>this.reader.getUint16();
+        return Result.ok<u32>(<u32>this.reader.getUint16());
       case Format.BIN32:
-        return this.reader.getUint32();
+        return Result.ok<u32>(this.reader.getUint32());
     }
-    throw new RangeError(E_INVALIDLENGTH);
+    return Result.err<u32>(new RangeError(E_INVALIDLENGTH));
   }
 
-  readByteArray(): ArrayBuffer {
-    const arrLength = this.readBinLength();
+  readByteArray(): Result<ArrayBuffer> {
+    const result = this.readBinLength();
+    if (result.isErr) {
+      return Result.err<ArrayBuffer>(result.unwrapErr());
+    }
+
+    const arrLength = result.unwrap();
     const arrBytes = this.reader.getBytes(arrLength);
-    return arrBytes;
+    return Result.ok<ArrayBuffer>(arrBytes);
   }
 
-  readArraySize(): u32 {
+  readArraySize(): Result<u32> {
     const leadByte = this.reader.getUint8();
     if (this.isFixedArray(leadByte)) {
-      return <u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
+      return Result.ok<u32>(<u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE));
     } else if (leadByte == Format.ARRAY16) {
-      return <u32>this.reader.getUint16();
+      return Result.ok<u32>(<u32>this.reader.getUint16());
     } else if (leadByte == Format.ARRAY32) {
-      return this.reader.getUint32();
+      return Result.ok<u32>(this.reader.getUint32());
     } else if (leadByte == Format.NIL) {
-      return 0;
+      return Result.ok<u32>(0);
     }
-    throw new RangeError(E_INVALIDLENGTH + leadByte.toString());
+    return Result.err<u32>(new RangeError(E_INVALIDLENGTH + leadByte.toString()));
   }
 
-  readMapSize(): u32 {
+  readMapSize(): Result<u32> {
     const leadByte = this.reader.getUint8();
     if (this.isFixedMap(leadByte)) {
-      return <u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
+      return Result.ok<u32>(<u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE));
     } else if (leadByte == Format.MAP16) {
-      return <u32>this.reader.getUint16();
+      return Result.ok<u32>(<u32>this.reader.getUint16());
     } else if (leadByte == Format.MAP32) {
-      return this.reader.getUint32();
+      return Result.ok<u32>(this.reader.getUint32());
     }
-    throw new RangeError(E_INVALIDLENGTH);
+    return Result.err<u32>(new RangeError(E_INVALIDLENGTH));
   }
 
   isFloat32(u: u8): bool {
@@ -447,44 +617,75 @@ export class Decoder {
     return objectsToDiscard;
   }
 
-  readArray<T>(fn: (decoder: Decoder) => T): Array<T> {
-    const size = this.readArraySize();
+  readArray<T>(fn: (decoder: SafeDecoder) => Result<T>): Result<Array<T>> {
+    const result = this.readArraySize();
+    if (result.isErr) {
+      return Result.err<Array<T>>(result.unwrapErr());
+    }
+
+    const size = result.unwrap();
     let a = new Array<T>();
     for (let i: u32 = 0; i < size; i++) {
-      const item = fn(this);
-      a.push(item);
+      const itemResult = fn(this);
+      if (itemResult.isErr) {
+        return Result.err<Array<T>>(itemResult.unwrapErr());
+      }
+      a.push(itemResult);
     }
-    return a;
+    return Result.ok<Array<T>>(a);
   }
 
-  readNullableArray<T>(fn: (decoder: Decoder) => T): Array<T> | null {
+  readNullableArray<T>(fn: (decoder: SafeDecoder) => Result<T>): Result<Array<T> | null> {
     if (this.isNextNil()) {
-      return null;
+      return Result.ok<Array<T> | null>(null);
     }
-    return this.readArray(fn);
+
+    const result = this.readArray(fn);
+    if (result.isOk) {
+      return Result.ok<Array<T> | null>(result.unwrap());
+    } else {
+      return Result.err<Array<T> | null>(result.unwrapErr());
+    }
   }
 
   readMap<K, V>(
-    keyFn: (decoder: Decoder) => K,
-    valueFn: (decoder: Decoder) => V
-  ): Map<K, V> {
-    const size = this.readMapSize();
+    keyFn: (decoder: SafeDecoder) => Result<K>,
+    valueFn: (decoder: SafeDecoder) => Result<V>
+  ): Result<Map<K, V>> {
+    const result = this.readMapSize();
+    if (result.isErr) {
+      return Result.err<Map<K, V>>(result.unwrapErr());
+    }
+
+    const size = result.unwrap();
     let m = new Map<K, V>();
     for (let i: u32 = 0; i < size; i++) {
-      const key = keyFn(this);
-      const value = valueFn(this);
+      const keyResult = keyFn(this);
+      if (keyResult.isErr) {
+        return Result.err<Map<K, V>>(keyResult.unwrapErr());
+      }
+      const valueResult = valueFn(this)
+      if (valueResult.isErr) {
+        return Result.err<Map<K, V>>(valueResult.unwrapErr());
+      }
       m.set(key, value);
     }
-    return m;
+    return Result.ok<Map<K, V>>(m);
   }
 
   readNullableMap<K, V>(
-    keyFn: (decoder: Decoder) => K,
-    valueFn: (decoder: Decoder) => V
-  ): Map<K, V> | null {
+    keyFn: (decoder: SafeDecoder) => Result<K>,
+    valueFn: (decoder: SafeDecoder) => Result<V>
+  ): Result<Map<K, V> | null> {
     if (this.isNextNil()) {
-      return null;
+      return Result.ok<Map<K, V> | null>(null);
     }
-    return this.readMap(keyFn, valueFn);
+
+    const result = this.readMap(keyFn, valueFn);
+    if (result.isOk) {
+      return Result.ok<Map<K, V> | null>(result.unwrap());
+    } else {
+      return Result.err<Map<K, V> | null>(result.unwrapErr());
+    }
   }
 }

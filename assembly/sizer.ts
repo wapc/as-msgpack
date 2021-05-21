@@ -123,7 +123,7 @@ export class Sizer implements Writer {
     this.length += 9;
   }
 
-  writeArray<T>(a: Array<T>, fn: (sizer: Sizer, item: T) => void): void {
+  writeArray<T>(a: Array<T>, fn: (sizer: Writer, item: T) => void): void {
     this.writeArraySize(a.length);
     for (let i: i32 = 0; i < a.length; i++) {
       fn(this, a[i]);
