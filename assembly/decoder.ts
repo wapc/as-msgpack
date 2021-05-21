@@ -155,7 +155,12 @@ export class SafeDecoder {
   }
 
   readInt8(): Result<i8> {
-    const value = this.readInt64().unwrap(); // todo
+    const result = this.readInt64()
+    if (result.isErr) {
+      return Result.err<i8>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <i64>i8.MAX_VALUE && value >= <i64>i8.MIN_VALUE) {
       return Result.ok<i8>(<i8>value);
     }
@@ -165,7 +170,12 @@ export class SafeDecoder {
   }
 
   readInt16(): Result<i16> {
-    const value = this.readInt64().unwrap(); // todo
+    const result = this.readInt64()
+    if (result.isErr) {
+      return Result.err<i16>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <i64>i16.MAX_VALUE && value >= <i64>i16.MIN_VALUE) {
       return Result.ok<i16>(<i16>value);
     }
@@ -175,7 +185,12 @@ export class SafeDecoder {
   }
 
   readInt32(): Result<i32> {
-    const value = this.readInt64().unwrap(); // todo
+    const result = this.readInt64()
+    if (result.isErr) {
+      return Result.err<i32>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <i64>i32.MAX_VALUE && value >= <i64>i32.MIN_VALUE) {
       return Result.ok<i32>(<i32>value);
     }
@@ -224,7 +239,12 @@ export class SafeDecoder {
   }
 
   readUInt8(): Result<u8> {
-    const value = this.readUInt64().unwrap(); // todo
+    const result = this.readUInt64()
+    if (result.isErr) {
+      return Result.err<u8>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <u64>u8.MAX_VALUE) {
       return Result.ok<u8>(<u8>value);
     }
@@ -234,7 +254,12 @@ export class SafeDecoder {
   }
 
   readUInt16(): Result<u16> {
-    const value = this.readUInt64().unwrap(); // todo
+    const result = this.readUInt64()
+    if (result.isErr) {
+      return Result.err<u16>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <u64>u16.MAX_VALUE) {
       return Result.ok<u16>(<u16>value);
     }
@@ -244,7 +269,12 @@ export class SafeDecoder {
   }
 
   readUInt32(): Result<u32> {
-    const value = this.readUInt64().unwrap(); // todo
+    const result = this.readUInt64()
+    if (result.isErr) {
+      return Result.err<u32>(result.unwrapErr());
+    }
+    const value = result.unwrap();
+
     if (value <= <u64>u32.MAX_VALUE) {
       return Result.ok<u32>(<u32>value);
     }
