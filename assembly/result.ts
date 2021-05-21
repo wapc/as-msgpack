@@ -4,11 +4,11 @@ export class Result<T> {
   private readonly err: Error;
 
   static ok<T>(t: T): Result<T> {
-    return new Result<T>(true, t, dummy<Error>());
+    return new Result<T>(true, t, phantomType<Error>());
   }
 
   static err<T>(err: Error): Result<T> {
-    return new Result<T>(false, dummy<T>(), err);
+    return new Result<T>(false, phantomType<T>(), err);
   }
 
   protected constructor(isOk: boolean, ok: T, err: Error) {
@@ -41,7 +41,7 @@ export class Result<T> {
   get isErr(): boolean { return !this.isOk }
 }
 
-function dummy<T>(): T {
+function phantomType<T>(): T {
   if (isInteger<T>()) {
     return <T>0;
   } else if (isFloat<T>()) {
