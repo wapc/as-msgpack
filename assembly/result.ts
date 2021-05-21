@@ -31,13 +31,6 @@ export class Result<T> {
     return this.err;
   }
 
-  unwrapOr(t: T): T {
-    if (this.isOk) {
-      return this.ok;
-    }
-    return t;
-  }
-
   get isErr(): boolean { return !this.isOk }
 }
 

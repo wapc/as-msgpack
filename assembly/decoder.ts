@@ -626,8 +626,11 @@ export class SafeDecoder {
     const size = result.unwrap();
     let a = new Array<T>();
     for (let i: u32 = 0; i < size; i++) {
-      const item = fn(this).unwrap();
-      a.push(item);
+      const itemResult = fn(this);
+      if (itemResult.isErr) {
+        return Result.err<Array<T>>(itemResult.unwrapErr());
+      }
+      a.push(itemResult);
     }
     return Result.ok<Array<T>>(a);
   }
@@ -657,8 +660,14 @@ export class SafeDecoder {
     const size = result.unwrap();
     let m = new Map<K, V>();
     for (let i: u32 = 0; i < size; i++) {
-      const key = keyFn(this).unwrap(); // todo
-      const value = valueFn(this).unwrap(); // todo
+      const keyResult = keyFn(this);
+      if (keyResult.isErr) {
+        return Result.err<Map<K, V>>(keyResult.unwrapErr());
+      }
+      const valueResult = valueFn(this)
+      if (valueResult.isErr) {
+        return Result.err<Map<K, V>>(valueResult.unwrapErr());
+      }
       m.set(key, value);
     }
     return Result.ok<Map<K, V>>(m);

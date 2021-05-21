@@ -25,14 +25,4 @@ describe("Result", () => {
       }).toThrow();
     });
   });
-
-  describe("unwrapOr", () => {
-    it("returns t when Ok(T)", () => {
-      expect(Result.ok<i32>(1).unwrapOr(2)).toBe(1);
-    });
-
-    it("returns the default value when Err(E)", () => {
-      expect(Result.err<i32>(new Error("boom")).unwrapOr(2)).toBe(2);
-    });
-  });
 });
