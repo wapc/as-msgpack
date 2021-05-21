@@ -17,13 +17,6 @@ export class Result<T, E> {
     this.err = err;
   }
 
-  map<U>(fn: (t: T) => U): Result<U, E> {
-    if (this.isOk) {
-      return Result.ok<U, E>(fn(this.ok));
-    }
-    return Result.err<U, E>(this.err);
-  }
-
   unwrap(): T {
     if (this.isOk) {
       return this.ok;
@@ -31,19 +24,18 @@ export class Result<T, E> {
     throw new Error("called unwrap on Err(E)");
   }
 
-  unwrap_err(): E {
-    if (!this.isOk) {
-      return this.err;
+  unwrapErr(): E {
+    if (this.isOk) {
+      throw new Error("called unwrapErr on Ok(T)");
     }
-    throw new Error("called unwrap_err on Ok(T)");
+    return this.err;
   }
 
-  unwrap_or(t: T): T {
+  unwrapOr(t: T): T {
     if (this.isOk) {
       return this.ok;
-    } else {
-      return t;
     }
+    return t;
   }
 
   get isErr(): boolean { return !this.isOk }

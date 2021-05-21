@@ -13,13 +13,25 @@ describe("Result", () => {
     });
   });
 
-  describe("unwrap_or", () => {
+  describe("unwrapErr", () => {
+    it("returns e when Err(E)", () => {
+      expect(Result.err<i32, string>("boom").unwrapErr()).toBe("boom");
+    });
+
+    it("throws when Ok(T)", () => {
+      expect(() => {
+        Result.ok<i32, string>(1).unwrapErr();
+      }).toThrow();
+    });
+  });
+
+  describe("unwrapOr", () => {
     it("returns t when Ok(T)", () => {
-      expect(Result.ok<i32, string>(1).unwrap_or(2)).toBe(1);
+      expect(Result.ok<i32, string>(1).unwrapOr(2)).toBe(1);
     });
 
     it("returns the default value when Err(E)", () => {
-      expect(Result.err<i32, string>("boom").unwrap_or(2)).toBe(2);
+      expect(Result.err<i32, string>("boom").unwrapOr(2)).toBe(2);
     });
   });
 });

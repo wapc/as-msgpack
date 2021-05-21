@@ -1,4 +1,4 @@
-import { SafeDecoder, Decoder, Writer, Encoder, Sizer } from "..";
+import { Decoder, Writer, Encoder, Sizer } from "..";
 
 class CodecTest {
   nil: string | null = "null";
@@ -84,40 +84,40 @@ class CodecTest {
         this.bytes = reader.readByteArray();
       } else if (field == "array") {
         this.array = reader.readArray(
-          (decoder: SafeDecoder): u8 => {
-            return decoder.readUInt8().unwrap();
+          (decoder: Decoder): u8 => {
+            return decoder.readUInt8();
           }
         );
       } else if (field == "map") {
         this.map = reader.readMap(
-          (decoder: SafeDecoder): string => {
-            return decoder.readString().unwrap();
+          (decoder: Decoder): string => {
+            return decoder.readString();
           },
-          (decoder: SafeDecoder): Array<i32> => {
+          (decoder: Decoder): Array<i32> => {
             return decoder.readArray(
-              (decoder: SafeDecoder): i32 => {
-                return decoder.readInt32().unwrap();
+              (decoder: Decoder): i32 => {
+                return decoder.readInt32();
               }
-            ).unwrap();
+            );
           }
         );
       } else if (field == "nullableArray") {
         this.nullableArray = reader.readNullableArray(
-          (decoder: SafeDecoder): u8 => {
-            return decoder.readUInt8().unwrap();
+          (decoder: Decoder): u8 => {
+            return decoder.readUInt8();
           }
         );
       } else if (field == "nullableMap") {
         this.nullableMap = reader.readNullableMap(
-          (decoder: SafeDecoder): string => {
-            return decoder.readString().unwrap();
+          (decoder: Decoder): string => {
+            return decoder.readString();
           },
-          (decoder: SafeDecoder): Array<i32> => {
+          (decoder: Decoder): Array<i32> => {
             return decoder.readArray(
-              (decoder: SafeDecoder): i32 => {
-                return decoder.readInt32().unwrap();
+              (decoder: Decoder): i32 => {
+                return decoder.readInt32();
               }
-            ).unwrap();
+            );
           }
         );
       } else {
