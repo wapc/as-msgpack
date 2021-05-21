@@ -1,17 +1,17 @@
-export class Result<T, E> {
+export class Result<T> {
   public readonly isOk: boolean;
   private readonly ok: T;
-  private readonly err: E;
+  private readonly err: Error;
 
-  static ok<T, E>(t: T): Result<T, E> {
-    return new Result<T, E>(true, t, dummy<E>());
+  static ok<T>(t: T): Result<T> {
+    return new Result<T>(true, t, dummy<Error>());
   }
 
-  static err<T, E>(err: E): Result<T, E> {
-    return new Result<T, E>(false, dummy<T>(), err);
+  static err<T>(err: Error): Result<T> {
+    return new Result<T>(false, dummy<T>(), err);
   }
 
-  protected constructor(isOk: boolean, ok: T, err: E) {
+  protected constructor(isOk: boolean, ok: T, err: Error) {
     this.isOk = isOk;
     this.ok = ok;
     this.err = err;
@@ -21,10 +21,10 @@ export class Result<T, E> {
     if (this.isOk) {
       return this.ok;
     }
-    throw new Error("called unwrap on Err(E)");
+    throw this.err;
   }
 
-  unwrapErr(): E {
+  unwrapErr(): Error {
     if (this.isOk) {
       throw new Error("called unwrapErr on Ok(T)");
     }
