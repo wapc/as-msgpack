@@ -117,9 +117,16 @@ export class Decoder {
     return this.readMap(keyFn, valueFn);
   }
 
-  skip(): void {
-    this.decoder.skip();
-  }
+  isFloat32(u: u8): bool { return this.decoder.isFloat32(u); }
+  isFloat64(u: u8): bool { return this.decoder.isFloat64(u); }
+  isFixedInt(u: u8): bool { return this.decoder.isFixedInt(u); }
+  isNegativeFixedInt(u: u8): bool { return this.decoder.isNegativeFixedInt(u); }
+  isFixedMap(u: u8): bool { return this.decoder.isFixedMap(u); }
+  isFixedArray(u: u8): bool { return this.decoder.isFixedArray(u); }
+  isFixedString(u: u8): bool { return this.decoder.isFixedString(u); }
+  isNil(u: u8): bool { return this.decoder.isNil(u); }
+  getSize(): u32 { return this.decoder.getSize(); }
+  skip(): void { this.decoder.skip(); }
 }
 
 export class SafeDecoder {
@@ -422,35 +429,35 @@ export class SafeDecoder {
     return Result.err<u32>(new RangeError(E_INVALIDLENGTH));
   }
 
-  private isFloat32(u: u8): bool {
+  isFloat32(u: u8): bool {
     return u == Format.FLOAT32;
   }
 
-  private isFloat64(u: u8): bool {
+  isFloat64(u: u8): bool {
     return u == Format.FLOAT64;
   }
 
-  private isFixedInt(u: u8): bool {
+  isFixedInt(u: u8): bool {
     return u >> 7 == 0;
   }
 
-  private isNegativeFixedInt(u: u8): bool {
+  isNegativeFixedInt(u: u8): bool {
     return (u & 0xe0) == Format.NEGATIVE_FIXINT;
   }
 
-  private isFixedMap(u: u8): bool {
+  isFixedMap(u: u8): bool {
     return (u & 0xf0) == Format.FIXMAP;
   }
 
-  private isFixedArray(u: u8): bool {
+  isFixedArray(u: u8): bool {
     return (u & 0xf0) == Format.FIXARRAY;
   }
 
-  private isFixedString(u: u8): bool {
+  isFixedString(u: u8): bool {
     return (u & 0xe0) == Format.FIXSTR;
   }
 
-  private isNil(u: u8): bool {
+  isNil(u: u8): bool {
     return u == Format.NIL;
   }
 
@@ -464,7 +471,7 @@ export class SafeDecoder {
     }
   }
 
-  private getSize(): i32 {
+  getSize(): i32 {
     const leadByte = this.reader.getUint8(); // will discard one
     let objectsToDiscard = <i32>0;
     // Handled for fixed values
