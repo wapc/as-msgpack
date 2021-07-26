@@ -196,9 +196,32 @@ export class Decoder {
       } else {
         return <f32>value;
       }
-    } else {
-      throw new Error("bad prefix for float");
     }
+    if (this.isFixedInt(prefix)) {
+      return <f32>prefix;
+    }
+    if (this.isNegativeFixedInt(prefix)) {
+      return <f32>(<i8>prefix);
+    }
+    switch (prefix) {
+      case Format.INT8:
+        return <f32>this.reader.getInt8();
+      case Format.INT16:
+        return <f32>this.reader.getInt16();
+      case Format.INT32:
+        return <f32>this.reader.getInt32();
+      case Format.INT64:
+        return <f32>this.reader.getInt64();
+      case Format.UINT8:
+        return <f32>this.reader.getUint8();
+      case Format.UINT16:
+        return <f32>this.reader.getUint16();
+      case Format.UINT32:
+        return <f32>this.reader.getUint32();
+      case Format.UINT64:
+        return <f32>this.reader.getUint64();
+    }
+    throw new Error("bad prefix for float");
   }
 
   readFloat64(): f64 {
@@ -207,9 +230,26 @@ export class Decoder {
       return <f64>this.reader.getFloat64();
     } else if (this.isFloat32(prefix)) {
       return <f64>this.reader.getFloat32();
-    } else {
-      throw new Error("bad prefix for float");
     }
+    switch (prefix) {
+      case Format.INT8:
+        return <f64>this.reader.getInt8();
+      case Format.INT16:
+        return <f64>this.reader.getInt16();
+      case Format.INT32:
+        return <f64>this.reader.getInt32();
+      case Format.INT64:
+        return <f64>this.reader.getInt64();
+      case Format.UINT8:
+        return <f64>this.reader.getUint8();
+      case Format.UINT16:
+        return <f64>this.reader.getUint16();
+      case Format.UINT32:
+        return <f64>this.reader.getUint32();
+      case Format.UINT64:
+        return <f64>this.reader.getUint64();
+    }
+    throw new Error("bad prefix for float");
   }
 
   readString(): string {
@@ -267,13 +307,17 @@ export class Decoder {
     const leadByte = this.reader.getUint8();
     if (this.isFixedArray(leadByte)) {
       return <u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
-    } else if (leadByte == Format.ARRAY16) {
-      return <u32>this.reader.getUint16();
-    } else if (leadByte == Format.ARRAY32) {
-      return this.reader.getUint32();
-    } else if (leadByte == Format.NIL) {
-      return 0;
     }
+
+    switch (leadByte) {
+      case Format.ARRAY16:
+        return <u32>this.reader.getUint16();
+      case Format.ARRAY32:
+        return this.reader.getUint32();
+      case Format.NIL:
+        return 0;
+    }
+
     throw new RangeError(E_INVALIDLENGTH + leadByte.toString());
   }
 
@@ -281,12 +325,17 @@ export class Decoder {
     const leadByte = this.reader.getUint8();
     if (this.isFixedMap(leadByte)) {
       return <u32>(leadByte & Format.FOUR_LEAST_SIG_BITS_IN_BYTE);
-    } else if (leadByte == Format.MAP16) {
-      return <u32>this.reader.getUint16();
-    } else if (leadByte == Format.MAP32) {
-      return this.reader.getUint32();
     }
-    throw new RangeError(E_INVALIDLENGTH);
+    switch (leadByte) {
+      case Format.MAP16:
+        return <u32>this.reader.getUint16();
+      case Format.MAP32:
+        return this.reader.getUint32();
+      case Format.NIL:
+        return 0;
+    }
+
+    throw new RangeError(E_INVALIDLENGTH + leadByte.toString());
   }
 
   isFloat32(u: u8): bool {

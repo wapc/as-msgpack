@@ -18,8 +18,8 @@
   },
   "homepage": "https://github.com/wapc/as-msgpack#readme",
   "devDependencies": {
-    "@as-pect/cli": "6.0.x",
-    "assemblyscript": "0.18.x"
+    "@as-pect/cli": "^6.2.4",
+    "assemblyscript": "^0.19.8"
   },
   "dependencies": {}
 }
