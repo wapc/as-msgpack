@@ -3,6 +3,7 @@
   "version": "0.1.13",
   "types": "assembly/index.ts",
   "description": "MessagePack package for AssemblyScript",
+  "main": "assembly/index.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wapc/as-msgpack.git"
@@ -11,7 +12,7 @@
     "test": "asp --verbose",
     "test:ci": "asp --summary"
   },
-  "author": "",
+  "author": "waPC authors",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/wapc/as-msgpack/issues"
@@ -19,7 +20,7 @@
   "homepage": "https://github.com/wapc/as-msgpack#readme",
   "devDependencies": {
     "@as-pect/cli": "^6.2.4",
-    "assemblyscript": "^0.19.8"
+    "assemblyscript": "^0.20.6"
   },
   "dependencies": {}
 }
