@@ -2,6 +2,7 @@ import { Decoder, Writer, Encoder, Sizer } from "..";
 
 class CodecTest {
   nil: string | null = "null";
+  bool: bool;
   int8: i8;
   int16: i16;
   int32: i32;
@@ -16,9 +17,12 @@ class CodecTest {
   bytes: ArrayBuffer = new ArrayBuffer(1);
   array: Array<u8> = new Array<u8>();
   map: Map<string, Array<i32>> = new Map<string, Array<i32>>();
+  nullableArray: Array<u8> | null;
+  nullableMap: Map<string, Array<i32>> | null;
 
   init(): void {
     this.nil = null;
+    this.bool = true;
     this.int8 = -128;
     this.int16 = -32768;
     this.int32 = -2147483648;
@@ -35,6 +39,11 @@ class CodecTest {
     this.map = new Map<string, Array<i32>>();
     this.map.set("foo", [1, -1, 42]);
     this.map.set("baz", [12412, -98987]);
+    this.nullableArray = [1, 2, 3];
+    const nullableMap = new Map<string, Array<i32>>();
+    nullableMap.set("toto", [1, 2]);
+    nullableMap.set("titi", [3, 4]);
+    this.nullableMap = new Map<string, Array<i32>>();
   }
 
   decode(reader: Decoder): void {
@@ -47,6 +56,8 @@ class CodecTest {
       if (field == "nil") {
         expect(reader.isNextNil()).toBeTruthy();
         this.nil = null;
+      } else if (field == "bool") {
+        this.bool = reader.readBool();
       } else if (field == "int8") {
         this.int8 = reader.readInt8();
       } else if (field == "int16") {
@@ -72,22 +83,35 @@ class CodecTest {
       } else if (field == "bytes") {
         this.bytes = reader.readByteArray();
       } else if (field == "array") {
-        this.array = reader.readArray(
-          (decoder: Decoder): u8 => {
-            return decoder.readUInt8();
-          }
-        );
+        this.array = reader.readArray((decoder: Decoder): u8 => {
+          return decoder.readUInt8();
+        });
       } else if (field == "map") {
         this.map = reader.readMap(
           (decoder: Decoder): string => {
             return decoder.readString();
           },
           (decoder: Decoder): Array<i32> => {
-            return decoder.readArray(
-              (decoder: Decoder): i32 => {
-                return decoder.readInt32();
-              }
-            );
+            return decoder.readArray((decoder: Decoder): i32 => {
+              return decoder.readInt32();
+            });
+          }
+        );
+      } else if (field == "nullableArray") {
+        this.nullableArray = reader.readNullableArray<u8>(
+          (decoder: Decoder): u8 => {
+            return decoder.readUInt8();
+          }
+        );
+      } else if (field == "nullableMap") {
+        this.nullableMap = reader.readNullableMap<string, Array<i32>>(
+          (decoder: Decoder): string => {
+            return decoder.readString();
+          },
+          (decoder: Decoder): Array<i32> => {
+            return decoder.readArray<i32>((decoder: Decoder): i32 => {
+              return decoder.readInt32();
+            });
           }
         );
       } else {
@@ -97,7 +121,7 @@ class CodecTest {
   }
 
   encode(writer: Writer): void {
-    writer.writeMapSize(16);
+    writer.writeMapSize(19);
 
     // Add some nested data that must be skipped.
     // This tests skipping over unknown fields.
@@ -119,6 +143,8 @@ class CodecTest {
 
     writer.writeString("nil");
     writer.writeNil();
+    writer.writeString("bool");
+    writer.writeBool(this.bool);
     writer.writeString("int8");
     writer.writeInt8(this.int8);
     writer.writeString("int16");
@@ -150,6 +176,25 @@ class CodecTest {
     writer.writeString("map");
     writer.writeMap(
       this.map,
+      (writer: Writer, key: string): void => {
+        writer.writeString(key);
+      },
+      (writer: Writer, value: Array<i32>) => {
+        writer.writeArray(value, (writer: Writer, item: i32) => {
+          writer.writeInt32(item);
+        });
+      }
+    );
+    writer.writeString("nullableArray");
+    writer.writeNullableArray(
+      this.nullableArray,
+      (writer: Writer, item: u8) => {
+        writer.writeUInt8(item);
+      }
+    );
+    writer.writeString("nullableMap");
+    writer.writeNullableMap(
+      this.nullableMap,
       (writer: Writer, key: string): void => {
         writer.writeString(key);
       },

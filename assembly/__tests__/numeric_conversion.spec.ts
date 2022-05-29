@@ -6,6 +6,10 @@ class Wrapper<T> {
   fromBuffer(buffer: ArrayBuffer): void {
     const decoder = new Decoder(buffer);
     this.decode(decoder);
+    const err = decoder.error()
+    if (err) {
+      throw err;
+    }
   }
 
   toBuffer(): ArrayBuffer {
@@ -83,7 +87,7 @@ describe("CodecNumericConversionCheck", () => {
       expect(() => {
         const input = new Wrapper<i32>(-42);
         const output = new Wrapper<u8>(0);
-        output.fromBuffer(input.toBuffer())
+        output.fromBuffer(input.toBuffer());
       }).toThrow();
     });
 
@@ -91,7 +95,7 @@ describe("CodecNumericConversionCheck", () => {
       expect(() => {
         const input = new Wrapper<u16>(257);
         const output = new Wrapper<u8>(0);
-        output.fromBuffer(input.toBuffer())
+        output.fromBuffer(input.toBuffer());
       }).toThrow();
     });
   });

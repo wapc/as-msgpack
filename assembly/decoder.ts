@@ -4,9 +4,16 @@ import { E_INVALIDLENGTH } from "util/error";
 
 export class Decoder {
   private reader: DataReader;
+  private err: Error | null;
 
   constructor(ua: ArrayBuffer) {
     this.reader = new DataReader(ua, 0, ua.byteLength);
+  }
+
+  private setError(error: Error): void {
+    if (!this.err) {
+      this.err = error;
+    }
   }
 
   isNextNil(): bool {
@@ -24,7 +31,8 @@ export class Decoder {
     } else if (value == Format.FALSE) {
       return false;
     }
-    throw new Error("bad value for bool");
+    this.setError(new Error("bad value for bool"));
+    return false;
   }
 
   readInt8(): i8 {
@@ -32,27 +40,30 @@ export class Decoder {
     if (value <= <i64>i8.MAX_VALUE && value >= <i64>i8.MIN_VALUE) {
       return <i8>value;
     }
-    throw new Error(
+    this.setError(new Error(
       "interger overflow: value = " + value.toString() + "; bits = 8"
-    );
+    ));
+    return 0;
   }
   readInt16(): i16 {
     const value = this.readInt64();
     if (value <= <i64>i16.MAX_VALUE && value >= <i64>i16.MIN_VALUE) {
       return <i16>value;
     }
-    throw new Error(
+    this.setError(new Error(
       "interger overflow: value = " + value.toString() + "; bits = 16"
-    );
+    ));
+    return 0;
   }
   readInt32(): i32 {
     const value = this.readInt64();
     if (value <= <i64>i32.MAX_VALUE && value >= <i64>i32.MIN_VALUE) {
       return <i32>value;
     }
-    throw new Error(
+    this.setError(new Error(
       "interger overflow: value = " + value.toString() + "; bits = 32"
-    );
+    ));
+    return 0;
   }
 
   readInt64(): i64 {
@@ -84,12 +95,14 @@ export class Decoder {
         if (value <= <u64>i64.MAX_VALUE) {
           return <i64>value;
         }
-        throw new Error(
+        this.setError(new Error(
           "interger overflow: value = " + value.toString() + "; type = i64"
-        );
+        ));
+        return 0;
       }
       default:
-        throw new Error("bad prefix for int");
+        this.setError(new Error("bad prefix for int"));
+        return 0;
     }
   }
 
@@ -98,9 +111,10 @@ export class Decoder {
     if (value <= <u64>u8.MAX_VALUE) {
       return <u8>value;
     }
-    throw new Error(
+    this.setError(new Error(
       "unsigned interger overflow: value = " + value.toString() + "; bits = 8"
-    );
+    ));
+    return 0;
   }
 
   readUInt16(): u16 {
@@ -108,9 +122,10 @@ export class Decoder {
     if (value <= <u64>u16.MAX_VALUE) {
       return <u16>value;
     }
-    throw new Error(
+    this.setError(new Error(
       "unsigned interger overflow: value = " + value.toString() + "; bits = 16"
-    );
+    ));
+    return 0;
   }
 
   readUInt32(): u32 {
@@ -118,9 +133,10 @@ export class Decoder {
     if (value <= <u64>u32.MAX_VALUE) {
       return <u32>value;
     }
-    throw new Error(
+    this.setError(new Error(
       "unsigned interger overflow: value = " + value.toString() + "; bits = 32"
-    );
+    ));
+    return 0;
   }
 
   readUInt64(): u64 {
@@ -129,7 +145,8 @@ export class Decoder {
     if (this.isFixedInt(prefix)) {
       return <u64>prefix;
     } else if (this.isNegativeFixedInt(prefix)) {
-      throw new Error("bad prefix");
+      this.setError(new Error("bad prefix for unsigned int"));
+      return 0;
     }
 
     switch (prefix) {
@@ -146,36 +163,44 @@ export class Decoder {
         if (value >= 0) {
           return <u64>value;
         }
-        throw new Error(
+        this.setError(new Error(
           "interger underflow: value = " + value.toString() + "; type = u64"
-        );
+        ));
+        return 0;
       }
-      case Format.INT16:
+      case Format.INT16: {
         const value = this.reader.getInt16();
         if (value >= 0) {
           return <u64>value;
         }
-        throw new Error(
+        this.setError(new Error(
           "interger underflow: value = " + value.toString() + "; type = u64"
-        );
-      case Format.INT32:
+        ));
+        return 0;
+      }
+      case Format.INT32: {
         const value = this.reader.getInt32();
         if (value >= 0) {
           return <u64>value;
         }
-        throw new Error(
+        this.setError(new Error(
           "interger underflow: value = " + value.toString() + "; type = u64"
-        );
-      case Format.INT64:
+        ));
+        return 0;
+      }
+      case Format.INT64: {
         const value = this.reader.getInt64();
         if (value >= 0) {
           return <u64>value;
         }
-        throw new Error(
+        this.setError(new Error(
           "interger underflow: value = " + value.toString() + "; type = u64"
-        );
+        ));
+        return 0;
+      }
       default:
-        throw new Error("bad prefix for int");
+        this.setError(new Error("bad prefix for int"));
+        return 0;
     }
   }
 
@@ -190,9 +215,10 @@ export class Decoder {
       if (abs(diff) <= <f64>f32.EPSILON) {
         return f32.MAX_VALUE;
       } else if (diff < 0) {
-        throw new Error(
+        this.setError(new Error(
           "float overflow: value = " + value.toString() + "; type = f32"
-        );
+        ));
+        return 0;
       } else {
         return <f32>value;
       }
@@ -221,7 +247,8 @@ export class Decoder {
       case Format.UINT64:
         return <f32>this.reader.getUint64();
     }
-    throw new Error("bad prefix for float");
+    this.setError(new Error("bad prefix for float"));
+    return 0;
   }
 
   readFloat64(): f64 {
@@ -249,7 +276,8 @@ export class Decoder {
       case Format.UINT64:
         return <f64>this.reader.getUint64();
     }
-    throw new Error("bad prefix for float");
+    this.setError(new Error("bad prefix for float"));
+    return 0;
   }
 
   readString(): string {
@@ -275,7 +303,8 @@ export class Decoder {
         return this.reader.getUint32();
     }
 
-    throw new RangeError(E_INVALIDLENGTH + leadByte.toString());
+    this.setError(new RangeError(E_INVALIDLENGTH + leadByte.toString()));
+    return 0;
   }
 
   readBinLength(): u32 {
@@ -294,7 +323,8 @@ export class Decoder {
       case Format.BIN32:
         return this.reader.getUint32();
     }
-    throw new RangeError(E_INVALIDLENGTH);
+    this.setError(new RangeError(E_INVALIDLENGTH));
+    return 0;
   }
 
   readByteArray(): ArrayBuffer {
@@ -318,7 +348,8 @@ export class Decoder {
         return 0;
     }
 
-    throw new RangeError(E_INVALIDLENGTH + leadByte.toString());
+    this.setError(new RangeError(E_INVALIDLENGTH + leadByte.toString()));
+    return 0;
   }
 
   readMapSize(): u32 {
@@ -335,7 +366,8 @@ export class Decoder {
         return 0;
     }
 
-    throw new RangeError(E_INVALIDLENGTH + leadByte.toString());
+    this.setError(new RangeError(E_INVALIDLENGTH + leadByte.toString()));
+    return 0;
   }
 
   isFloat32(u: u8): bool {
@@ -487,9 +519,10 @@ export class Decoder {
           objectsToDiscard = 2 * <i32>this.reader.getUint32();
           break;
         default:
-          throw new TypeError(
+          this.setError(new TypeError(
             "invalid prefix, bad encoding for val: " + leadByte.toString()
-          );
+          ));
+          return 0;
       }
     }
 
@@ -535,5 +568,12 @@ export class Decoder {
       return null;
     }
     return this.readMap(keyFn, valueFn);
+  }
+
+  error(): Error | null {
+    if (this.err) {
+      return this.err;
+    }
+    return this.reader.error();
   }
 }
