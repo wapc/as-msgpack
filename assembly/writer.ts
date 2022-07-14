@@ -32,4 +32,5 @@ export interface Writer {
     keyFn: (writer: Writer, key: K) => void,
     valueFn: (writer: Writer, value: V) => void
   ): void;
+  error(): Error | null;
 }
