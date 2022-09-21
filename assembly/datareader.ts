@@ -47,7 +47,7 @@ export class DataReader {
   peekUint8(): u8 {
     const err = this.checkBufferSize(1);
     if (err) return 0;
-    return bswap(load<u8>(this.dataStart + this.byteOffset));
+    return load<u8>(this.dataStart + this.byteOffset);
   }
 
   discard(length: i32): void {
@@ -105,7 +105,7 @@ export class DataReader {
     if (err) return 0;
     const result = load<u8>(this.dataStart + this.byteOffset);
     this.byteOffset++;
-    return bswap(result);
+    return result;
   }
 
   getUint16(): u16 {
@@ -168,7 +168,7 @@ export class DataReader {
   setUint8(value: u8): void {
     const err = this.checkBufferSize(1);
     if (err) return;
-    store<u8>(this.dataStart + this.byteOffset, bswap(value));
+    store<u8>(this.dataStart + this.byteOffset, value);
     this.byteOffset++;
   }
 
